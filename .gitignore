@@ -160,3 +160,6 @@ rules.ninja
 /*.tar.gz
 
 /.vagrant
+
+build/
+.vscode/
