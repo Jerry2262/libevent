@@ -24,6 +24,10 @@ REGRESS_OBJS=regress.obj regress_buffer.obj regress_http.obj regress_dns.obj \
 
 OTHER_OBJS=test-init.obj test-eof.obj test-closed.obj test-weof.obj test-time.obj \
 	bench.obj bench_cascade.obj bench_http.obj bench_httpclient.obj \
+	bench_kvrocks_evbuffer_add.obj bench_kvrocks_evbuffer_readln.obj \
+	bench_kvrocks_evbuffer_drain.obj \
+	bench_kvrocks_bufferevent_readcb.obj \
+	bench_kvrocks_bufferevent_writecb.obj \
 	test-changelist.obj \
 	print-winsock-errors.obj
 
@@ -34,6 +38,10 @@ PROGRAMS=regress.exe \
 
 # Disabled for now:
 #	bench.exe bench_cascade.exe bench_http.exe bench_httpclient.exe
+#	bench_kvrocks_evbuffer_add.exe bench_kvrocks_evbuffer_readln.exe
+#	bench_kvrocks_evbuffer_drain.exe
+#	bench_kvrocks_bufferevent_readcb.exe
+#	bench_kvrocks_bufferevent_writecb.exe
 
 
 LIBS=..\libevent.lib ws2_32.lib shell32.lib advapi32.lib
@@ -67,6 +75,16 @@ bench_http.exe: bench_http.obj
 	$(CC) $(CFLAGS) $(LIBS) bench_http.obj
 bench_httpclient.exe: bench_httpclient.obj
 	$(CC) $(CFLAGS) $(LIBS) bench_httpclient.obj
+bench_kvrocks_evbuffer_add.exe: bench_kvrocks_evbuffer_add.obj
+	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_evbuffer_add.obj
+bench_kvrocks_evbuffer_readln.exe: bench_kvrocks_evbuffer_readln.obj
+	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_evbuffer_readln.obj
+bench_kvrocks_evbuffer_drain.exe: bench_kvrocks_evbuffer_drain.obj
+	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_evbuffer_drain.obj
+bench_kvrocks_bufferevent_readcb.exe: bench_kvrocks_bufferevent_readcb.obj
+	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_bufferevent_readcb.obj
+bench_kvrocks_bufferevent_writecb.exe: bench_kvrocks_bufferevent_writecb.obj
+	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_bufferevent_writecb.obj
 
 regress.gen.c regress.gen.h: regress.rpc ../event_rpcgen.py
 	echo // > regress.gen.c

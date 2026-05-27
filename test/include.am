@@ -20,6 +20,11 @@ TESTPROGRAMS = \
 	test/bench_cascade				\
 	test/bench_http				\
 	test/bench_httpclient			\
+	test/bench_kvrocks_evbuffer_add		\
+	test/bench_kvrocks_evbuffer_readln	\
+	test/bench_kvrocks_evbuffer_drain	\
+	test/bench_kvrocks_bufferevent_readcb	\
+	test/bench_kvrocks_bufferevent_writecb	\
 	test/test-changelist				\
 	test/test-dumpevents				\
 	test/test-eof				\
@@ -158,6 +163,16 @@ test_bench_http_SOURCES = test/bench_http.c
 test_bench_http_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
 test_bench_httpclient_SOURCES = test/bench_httpclient.c
 test_bench_httpclient_LDADD = $(LIBEVENT_GC_SECTIONS) libevent_core.la
+test_bench_kvrocks_evbuffer_add_SOURCES = test/bench_kvrocks_evbuffer_add.c
+test_bench_kvrocks_evbuffer_add_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
+test_bench_kvrocks_evbuffer_readln_SOURCES = test/bench_kvrocks_evbuffer_readln.c
+test_bench_kvrocks_evbuffer_readln_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
+test_bench_kvrocks_evbuffer_drain_SOURCES = test/bench_kvrocks_evbuffer_drain.c
+test_bench_kvrocks_evbuffer_drain_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
+test_bench_kvrocks_bufferevent_readcb_SOURCES = test/bench_kvrocks_bufferevent_readcb.c
+test_bench_kvrocks_bufferevent_readcb_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
+test_bench_kvrocks_bufferevent_writecb_SOURCES = test/bench_kvrocks_bufferevent_writecb.c
+test_bench_kvrocks_bufferevent_writecb_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
 
 test/regress.gen.c test/regress.gen.h: test/rpcgen-attempted
 

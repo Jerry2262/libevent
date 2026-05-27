@@ -1052,7 +1052,12 @@ macro(add_bench_prog prog)
                           ${LIB_PLATFORM})
 endmacro()
 if (NOT EVENT__DISABLE_BENCHMARK)
-    foreach (BENCHMARK bench_http bench_httpclient)
+    foreach (BENCHMARK bench_http bench_httpclient
+                      bench_kvrocks_evbuffer_add
+                      bench_kvrocks_evbuffer_readln
+                      bench_kvrocks_evbuffer_drain
+                      bench_kvrocks_bufferevent_readcb
+                      bench_kvrocks_bufferevent_writecb)
         add_bench_prog(${BENCHMARK} test/${BENCHMARK}.c)
     endforeach()
 
@@ -1572,4 +1577,3 @@ message(STATUS "CMAKE_C_COMPILER:         ${CMAKE_C_COMPILER} (id ${CMAKE_C_COMP
 message(STATUS "CMAKE_AR:                 ${CMAKE_AR}")
 message(STATUS "CMAKE_RANLIB:             ${CMAKE_RANLIB}")
 message(STATUS "")
-
