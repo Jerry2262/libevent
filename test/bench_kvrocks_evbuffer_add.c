@@ -19,7 +19,7 @@
 #include <getopt.h>
 #endif
 
-#define DEFAULT_OPS 1000000
+#define DEFAULT_DURATION 3
 #define DEFAULT_VALUE_SIZE 128
 #define BATCH_OPS 4096
 
@@ -41,8 +41,8 @@ elapsed_usec(const struct timeval *start, const struct timeval *end)
 static void
 usage(const char *prog)
 {
-	fprintf(stderr, "Usage: %s [-n evbuffer_add_calls] [-v value_size]\n",
-	    prog);
+	fprintf(stderr, "Usage: %s [-n evbuffer_add_calls] [-v value_size] "
+	    "[-d seconds]\n", prog);
 	exit(1);
 }
 
@@ -52,14 +52,16 @@ main(int argc, char **argv)
 	struct evbuffer *buf;
 	char *value;
 	char header[64];
-	long ops = DEFAULT_OPS;
+	long ops = 0;
 	long value_size = DEFAULT_VALUE_SIZE;
+	long duration = DEFAULT_DURATION;
+	long target_usec;
 	long i, done, todo;
 	bench_u64 bytes = 0;
 	long total_usec = 0;
 	int c;
 
-	while ((c = getopt(argc, argv, "n:v:h")) != -1) {
+	while ((c = getopt(argc, argv, "n:v:d:h")) != -1) {
 		switch (c) {
 		case 'n':
 			ops = atol(optarg);
@@ -67,14 +69,20 @@ main(int argc, char **argv)
 		case 'v':
 			value_size = atol(optarg);
 			break;
+		case 'd':
+			duration = atol(optarg);
+			break;
 		case 'h':
 		default:
 			usage(argv[0]);
 		}
 	}
 
-	if (ops <= 0 || value_size <= 0)
+	if (value_size <= 0 || ops < 0 || duration < 0)
 		usage(argv[0]);
+	if (ops == 0 && duration == 0)
+		usage(argv[0]);
+	target_usec = duration * 1000000L;
 
 	value = malloc((size_t)value_size);
 	if (value == NULL) {
@@ -84,11 +92,16 @@ main(int argc, char **argv)
 	memset(value, 'x', (size_t)value_size);
 	snprintf(header, sizeof(header), "$%ld\r\n", value_size);
 
-	for (done = 0; done < ops; done += todo) {
+	for (done = 0; ops == 0 || done < ops; done += todo) {
 		struct timeval start, end;
-		todo = ops - done;
-		if (todo > BATCH_OPS)
+
+		if (ops == 0)
 			todo = BATCH_OPS;
+		else {
+			todo = ops - done;
+			if (todo > BATCH_OPS)
+				todo = BATCH_OPS;
+		}
 
 		buf = evbuffer_new();
 		if (buf == NULL) {
@@ -135,12 +148,15 @@ main(int argc, char **argv)
 		total_usec += elapsed_usec(&start, &end);
 
 		evbuffer_free(buf);
+
+		if (target_usec > 0 && total_usec >= target_usec)
+			break;
 	}
 
 	printf("bench=evbuffer_add ops=%ld bytes=" U64_FMT
 	    " usec=%ld ops_sec=%.2f mb_sec=%.2f\n",
-	    ops, bytes, total_usec,
-	    total_usec ? (double)ops * 1000000.0 / total_usec : 0.0,
+	    done, bytes, total_usec,
+	    total_usec ? (double)done * 1000000.0 / total_usec : 0.0,
 	    total_usec ? (double)bytes / (1024.0 * 1024.0) * 1000000.0 /
 		total_usec : 0.0);
 

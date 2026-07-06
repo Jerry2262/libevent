@@ -30,7 +30,7 @@
 #define LOCAL_SOCKETPAIR_AF AF_UNIX
 #endif
 
-#define DEFAULT_WRITES 100000
+#define DEFAULT_DURATION 3
 #define DEFAULT_CONNS 64
 #define DEFAULT_REPLY_SIZE 256
 
@@ -50,11 +50,12 @@ struct conn {
 static struct event_base *base;
 static struct conn *conns;
 static char *reply;
-static long target_writes = DEFAULT_WRITES;
+static long target_writes = 0;
 static long queued_writes;
 static long completed_writes;
 static long n_conns = DEFAULT_CONNS;
 static long reply_size = DEFAULT_REPLY_SIZE;
+static long duration = DEFAULT_DURATION;
 static bench_u64 bytes_written;
 static bench_u64 bytes_read;
 
@@ -69,14 +70,14 @@ static void
 usage(const char *prog)
 {
 	fprintf(stderr, "Usage: %s [-n write_callbacks] [-c conns] "
-	    "[-v reply_size]\n", prog);
+	    "[-v reply_size] [-d seconds]\n", prog);
 	exit(1);
 }
 
 static int
 queue_one(struct conn *c)
 {
-	if (queued_writes >= target_writes)
+	if (target_writes > 0 && queued_writes >= target_writes)
 		return 0;
 	if (bufferevent_write(c->writer, reply, (size_t)reply_size) < 0)
 		return -1;
@@ -91,7 +92,7 @@ writecb(struct bufferevent *bev, void *arg)
 	struct conn *c = arg;
 
 	++completed_writes;
-	if (completed_writes >= target_writes) {
+	if (target_writes > 0 && completed_writes >= target_writes) {
 		event_base_loopexit(base, NULL);
 		return;
 	}
@@ -192,7 +193,7 @@ main(int argc, char **argv)
 		return 1;
 #endif
 
-	while ((c = getopt(argc, argv, "n:c:v:h")) != -1) {
+	while ((c = getopt(argc, argv, "n:c:v:d:h")) != -1) {
 		switch (c) {
 		case 'n':
 			target_writes = atol(optarg);
@@ -203,13 +204,18 @@ main(int argc, char **argv)
 		case 'v':
 			reply_size = atol(optarg);
 			break;
+		case 'd':
+			duration = atol(optarg);
+			break;
 		case 'h':
 		default:
 			usage(argv[0]);
 		}
 	}
 
-	if (target_writes <= 0 || n_conns <= 0 || reply_size <= 0)
+	if (target_writes < 0 || n_conns <= 0 || reply_size <= 0 || duration < 0)
+		usage(argv[0]);
+	if (target_writes == 0 && duration == 0)
 		usage(argv[0]);
 
 	base = event_base_new();
@@ -229,7 +235,14 @@ main(int argc, char **argv)
 	}
 
 	evutil_gettimeofday(&start, NULL);
-	for (i = 0; i < n_conns && queued_writes < target_writes; ++i) {
+	if (duration > 0) {
+		struct timeval tv;
+		tv.tv_sec = duration;
+		tv.tv_usec = 0;
+		event_base_loopexit(base, &tv);
+	}
+	for (i = 0; i < n_conns && (target_writes == 0 ||
+	    queued_writes < target_writes); ++i) {
 		if (queue_one(&conns[i]) < 0)
 			return 1;
 	}
