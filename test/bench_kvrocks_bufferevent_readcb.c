@@ -30,7 +30,7 @@
 #define LOCAL_SOCKETPAIR_AF AF_UNIX
 #endif
 
-#define DEFAULT_EVENTS 100000
+#define DEFAULT_DURATION 3
 #define DEFAULT_CONNS 64
 #define DEFAULT_BLOCK_SIZE 256
 
@@ -50,11 +50,12 @@ struct conn {
 static struct event_base *base;
 static struct conn *conns;
 static char *block;
-static long target_events = DEFAULT_EVENTS;
+static long target_events = 0;
 static long sent_blocks;
 static long read_events;
 static long n_conns = DEFAULT_CONNS;
 static long block_size = DEFAULT_BLOCK_SIZE;
+static long duration = DEFAULT_DURATION;
 static bench_u64 bytes_read;
 
 static long
@@ -68,7 +69,7 @@ static void
 usage(const char *prog)
 {
 	fprintf(stderr, "Usage: %s [-n read_callbacks] [-c conns] "
-	    "[-v block_size]\n", prog);
+	    "[-v block_size] [-d seconds]\n", prog);
 	exit(1);
 }
 
@@ -77,7 +78,7 @@ send_one(struct conn *c)
 {
 	ev_ssize_t n;
 
-	if (sent_blocks >= target_events)
+	if (target_events > 0 && sent_blocks >= target_events)
 		return 0;
 
 	n = send(c->peer, block, (int)block_size, 0);
@@ -109,7 +110,7 @@ readcb(struct bufferevent *bev, void *arg)
 	evbuffer_drain(input, len);
 	++read_events;
 
-	if (read_events >= target_events) {
+	if (target_events > 0 && read_events >= target_events) {
 		event_base_loopexit(base, NULL);
 		return;
 	}
@@ -192,7 +193,7 @@ main(int argc, char **argv)
 		return 1;
 #endif
 
-	while ((c = getopt(argc, argv, "n:c:v:h")) != -1) {
+	while ((c = getopt(argc, argv, "n:c:v:d:h")) != -1) {
 		switch (c) {
 		case 'n':
 			target_events = atol(optarg);
@@ -203,13 +204,18 @@ main(int argc, char **argv)
 		case 'v':
 			block_size = atol(optarg);
 			break;
+		case 'd':
+			duration = atol(optarg);
+			break;
 		case 'h':
 		default:
 			usage(argv[0]);
 		}
 	}
 
-	if (target_events <= 0 || n_conns <= 0 || block_size <= 0)
+	if (target_events < 0 || n_conns <= 0 || block_size <= 0 || duration < 0)
+		usage(argv[0]);
+	if (target_events == 0 && duration == 0)
 		usage(argv[0]);
 
 	base = event_base_new();
@@ -229,7 +235,14 @@ main(int argc, char **argv)
 	}
 
 	evutil_gettimeofday(&start, NULL);
-	for (i = 0; i < n_conns && sent_blocks < target_events; ++i) {
+	if (duration > 0) {
+		struct timeval tv;
+		tv.tv_sec = duration;
+		tv.tv_usec = 0;
+		event_base_loopexit(base, &tv);
+	}
+	for (i = 0; i < n_conns && (target_events == 0 ||
+	    sent_blocks < target_events); ++i) {
 		if (send_one(&conns[i]) < 0)
 			return 1;
 	}

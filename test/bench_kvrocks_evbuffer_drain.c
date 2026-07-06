@@ -19,7 +19,7 @@
 #include <getopt.h>
 #endif
 
-#define DEFAULT_OPS 1000000
+#define DEFAULT_DURATION 1
 #define BATCH_DRAINS 4096
 #define CHUNK_SIZE 4096
 
@@ -41,7 +41,8 @@ elapsed_usec(const struct timeval *start, const struct timeval *end)
 static void
 usage(const char *prog)
 {
-	fprintf(stderr, "Usage: %s [-n evbuffer_drain_calls]\n", prog);
+	fprintf(stderr, "Usage: %s [-n evbuffer_drain_calls] [-d seconds]\n",
+	    prog);
 	exit(1);
 }
 
@@ -93,16 +94,21 @@ int
 main(int argc, char **argv)
 {
 	char *chunk;
-	long ops = DEFAULT_OPS;
+	long ops = 0;
+	long duration = DEFAULT_DURATION;
+	long target_usec;
 	long done, todo, i;
 	bench_u64 bytes = 0;
 	long total_usec = 0;
 	int c;
 
-	while ((c = getopt(argc, argv, "n:h")) != -1) {
+	while ((c = getopt(argc, argv, "n:d:h")) != -1) {
 		switch (c) {
 		case 'n':
 			ops = atol(optarg);
+			break;
+		case 'd':
+			duration = atol(optarg);
 			break;
 		case 'h':
 		default:
@@ -110,8 +116,11 @@ main(int argc, char **argv)
 		}
 	}
 
-	if (ops <= 0)
+	if (ops < 0 || duration < 0)
 		usage(argv[0]);
+	if (ops == 0 && duration == 0)
+		usage(argv[0]);
+	target_usec = duration * 1000000L;
 
 	chunk = malloc(CHUNK_SIZE);
 	if (chunk == NULL) {
@@ -120,13 +129,17 @@ main(int argc, char **argv)
 	}
 	memset(chunk, 'd', CHUNK_SIZE);
 
-	for (done = 0; done < ops; done += todo) {
+	for (done = 0; ops == 0 || done < ops; done += todo) {
 		struct evbuffer *buf;
 		struct timeval start, end;
 
-		todo = ops - done;
-		if (todo > BATCH_DRAINS)
+		if (ops == 0)
 			todo = BATCH_DRAINS;
+		else {
+			todo = ops - done;
+			if (todo > BATCH_DRAINS)
+				todo = BATCH_DRAINS;
+		}
 
 		buf = evbuffer_new();
 		if (buf == NULL) {
@@ -157,12 +170,15 @@ main(int argc, char **argv)
 		total_usec += elapsed_usec(&start, &end);
 
 		evbuffer_free(buf);
+
+		if (target_usec > 0 && total_usec >= target_usec)
+			break;
 	}
 
 	printf("bench=evbuffer_drain ops=%ld bytes=" U64_FMT
 	    " usec=%ld ops_sec=%.2f mb_sec=%.2f\n",
-	    ops, bytes, total_usec,
-	    total_usec ? (double)ops * 1000000.0 / total_usec : 0.0,
+	    done, bytes, total_usec,
+	    total_usec ? (double)done * 1000000.0 / total_usec : 0.0,
 	    total_usec ? (double)bytes / (1024.0 * 1024.0) * 1000000.0 /
 		total_usec : 0.0);
 
