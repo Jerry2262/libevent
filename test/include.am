@@ -21,6 +21,9 @@ TESTPROGRAMS = \
 	test/bench_http				\
 	test/bench_httpclient			\
 	test/bench_kvrocks_evbuffer_add		\
+	test/bench_kvrocks_evbuffer_add_fixed128	\
+	test/bench_kvrocks_evbuffer_add_prealloc	\
+	test/bench_kvrocks_evbuffer_add_copyonly	\
 	test/bench_kvrocks_evbuffer_readln	\
 	test/bench_kvrocks_evbuffer_drain	\
 	test/bench_kvrocks_bufferevent_readcb	\
@@ -165,6 +168,12 @@ test_bench_httpclient_SOURCES = test/bench_httpclient.c
 test_bench_httpclient_LDADD = $(LIBEVENT_GC_SECTIONS) libevent_core.la
 test_bench_kvrocks_evbuffer_add_SOURCES = test/bench_kvrocks_evbuffer_add.c
 test_bench_kvrocks_evbuffer_add_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
+test_bench_kvrocks_evbuffer_add_fixed128_SOURCES = test/bench_kvrocks_evbuffer_add_fixed128.c
+test_bench_kvrocks_evbuffer_add_fixed128_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
+test_bench_kvrocks_evbuffer_add_prealloc_SOURCES = test/bench_kvrocks_evbuffer_add_prealloc.c
+test_bench_kvrocks_evbuffer_add_prealloc_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
+test_bench_kvrocks_evbuffer_add_copyonly_SOURCES = test/bench_kvrocks_evbuffer_add_copyonly.c
+test_bench_kvrocks_evbuffer_add_copyonly_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
 test_bench_kvrocks_evbuffer_readln_SOURCES = test/bench_kvrocks_evbuffer_readln.c
 test_bench_kvrocks_evbuffer_readln_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
 test_bench_kvrocks_evbuffer_drain_SOURCES = test/bench_kvrocks_evbuffer_drain.c
