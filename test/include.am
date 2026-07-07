@@ -24,6 +24,7 @@ TESTPROGRAMS = \
 	test/bench_kvrocks_evbuffer_add_fixed128	\
 	test/bench_kvrocks_evbuffer_add_prealloc	\
 	test/bench_kvrocks_evbuffer_add_copyonly	\
+	test/bench_kvrocks_evbuffer_add_copyonly_fixed128 \
 	test/bench_kvrocks_evbuffer_readln	\
 	test/bench_kvrocks_evbuffer_drain	\
 	test/bench_kvrocks_bufferevent_readcb	\
@@ -174,6 +175,8 @@ test_bench_kvrocks_evbuffer_add_prealloc_SOURCES = test/bench_kvrocks_evbuffer_a
 test_bench_kvrocks_evbuffer_add_prealloc_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
 test_bench_kvrocks_evbuffer_add_copyonly_SOURCES = test/bench_kvrocks_evbuffer_add_copyonly.c
 test_bench_kvrocks_evbuffer_add_copyonly_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
+test_bench_kvrocks_evbuffer_add_copyonly_fixed128_SOURCES = test/bench_kvrocks_evbuffer_add_copyonly_fixed128.c
+test_bench_kvrocks_evbuffer_add_copyonly_fixed128_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
 test_bench_kvrocks_evbuffer_readln_SOURCES = test/bench_kvrocks_evbuffer_readln.c
 test_bench_kvrocks_evbuffer_readln_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
 test_bench_kvrocks_evbuffer_drain_SOURCES = test/bench_kvrocks_evbuffer_drain.c
