@@ -163,3 +163,6 @@ rules.ninja
 
 build/
 .vscode/
+
+# bench output data
+/data
