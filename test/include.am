@@ -26,6 +26,9 @@ TESTPROGRAMS = \
 	test/bench_kvrocks_evbuffer_add_copyonly	\
 	test/bench_kvrocks_evbuffer_add_copyonly_fixed128 \
 	test/bench_kvrocks_evbuffer_add_metadata \
+	test/bench_kvrocks_evbuffer_add_direct \
+	test/bench_kvrocks_evbuffer_add_direct_nocb \
+	test/bench_kvrocks_evbuffer_add_direct_inlinecopy128 \
 	test/bench_kvrocks_evbuffer_readln	\
 	test/bench_kvrocks_evbuffer_drain	\
 	test/bench_kvrocks_bufferevent_readcb	\
@@ -47,6 +50,7 @@ EXTRA_PROGRAMS+= test/regress
 endif
 
 noinst_HEADERS+=				\
+	test/bench_kvrocks_evbuffer_add_direct_common.h \
 	test/regress.h				\
 	test/regress_thread.h			\
 	test/tinytest.h				\
@@ -180,6 +184,12 @@ test_bench_kvrocks_evbuffer_add_copyonly_fixed128_SOURCES = test/bench_kvrocks_e
 test_bench_kvrocks_evbuffer_add_copyonly_fixed128_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
 test_bench_kvrocks_evbuffer_add_metadata_SOURCES = test/bench_kvrocks_evbuffer_add_metadata.c
 test_bench_kvrocks_evbuffer_add_metadata_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
+test_bench_kvrocks_evbuffer_add_direct_SOURCES = test/bench_kvrocks_evbuffer_add_direct.c
+test_bench_kvrocks_evbuffer_add_direct_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
+test_bench_kvrocks_evbuffer_add_direct_nocb_SOURCES = test/bench_kvrocks_evbuffer_add_direct_nocb.c
+test_bench_kvrocks_evbuffer_add_direct_nocb_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
+test_bench_kvrocks_evbuffer_add_direct_inlinecopy128_SOURCES = test/bench_kvrocks_evbuffer_add_direct_inlinecopy128.c
+test_bench_kvrocks_evbuffer_add_direct_inlinecopy128_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
 test_bench_kvrocks_evbuffer_readln_SOURCES = test/bench_kvrocks_evbuffer_readln.c
 test_bench_kvrocks_evbuffer_readln_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
 test_bench_kvrocks_evbuffer_drain_SOURCES = test/bench_kvrocks_evbuffer_drain.c

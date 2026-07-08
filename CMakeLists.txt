@@ -1059,6 +1059,9 @@ if (NOT EVENT__DISABLE_BENCHMARK)
                       bench_kvrocks_evbuffer_add_copyonly
                       bench_kvrocks_evbuffer_add_copyonly_fixed128
                       bench_kvrocks_evbuffer_add_metadata
+                      bench_kvrocks_evbuffer_add_direct
+                      bench_kvrocks_evbuffer_add_direct_nocb
+                      bench_kvrocks_evbuffer_add_direct_inlinecopy128
                       bench_kvrocks_evbuffer_readln
                       bench_kvrocks_evbuffer_drain
                       bench_kvrocks_bufferevent_readcb
