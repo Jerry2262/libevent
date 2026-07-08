@@ -1056,6 +1056,9 @@ if (NOT EVENT__DISABLE_BENCHMARK)
                       bench_kvrocks_evbuffer_add
                       bench_kvrocks_evbuffer_add_fixed128
                       bench_kvrocks_evbuffer_add_fixed128_prealloc
+                      bench_kvrocks_evbuffer_add_fixed128_prealloc_cb
+                      bench_kvrocks_evbuffer_add_fixed128_prealloc_cb_disabled
+                      bench_kvrocks_evbuffer_add_fixed128_shortpath
                       bench_kvrocks_evbuffer_add_prealloc
                       bench_kvrocks_evbuffer_add_copyonly
                       bench_kvrocks_evbuffer_add_copyonly_fixed128
@@ -1068,6 +1071,12 @@ if (NOT EVENT__DISABLE_BENCHMARK)
 
     add_bench_prog(bench test/bench.c ${WIN32_GETOPT})
     add_bench_prog(bench_cascade test/bench_cascade.c ${WIN32_GETOPT})
+    if (EVENT__HAVE_PTHREADS)
+        add_bench_prog(bench_kvrocks_evbuffer_add_fixed128_prealloc_lock
+                       test/bench_kvrocks_evbuffer_add_fixed128_prealloc_lock.c)
+        target_link_libraries(bench_kvrocks_evbuffer_add_fixed128_prealloc_lock
+                              event_pthreads)
+    endif()
 endif()
 
 #

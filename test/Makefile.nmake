@@ -27,6 +27,9 @@ OTHER_OBJS=test-init.obj test-eof.obj test-closed.obj test-weof.obj test-time.ob
 	bench_kvrocks_evbuffer_add.obj \
 	bench_kvrocks_evbuffer_add_fixed128.obj \
 	bench_kvrocks_evbuffer_add_fixed128_prealloc.obj \
+	bench_kvrocks_evbuffer_add_fixed128_prealloc_cb.obj \
+	bench_kvrocks_evbuffer_add_fixed128_prealloc_cb_disabled.obj \
+	bench_kvrocks_evbuffer_add_fixed128_shortpath.obj \
 	bench_kvrocks_evbuffer_add_prealloc.obj \
 	bench_kvrocks_evbuffer_add_copyonly.obj \
 	bench_kvrocks_evbuffer_add_copyonly_fixed128.obj \
@@ -47,6 +50,9 @@ PROGRAMS=regress.exe \
 #	bench_kvrocks_evbuffer_add.exe
 #	bench_kvrocks_evbuffer_add_fixed128.exe
 #	bench_kvrocks_evbuffer_add_fixed128_prealloc.exe
+#	bench_kvrocks_evbuffer_add_fixed128_prealloc_cb.exe
+#	bench_kvrocks_evbuffer_add_fixed128_prealloc_cb_disabled.exe
+#	bench_kvrocks_evbuffer_add_fixed128_shortpath.exe
 #	bench_kvrocks_evbuffer_add_prealloc.exe
 #	bench_kvrocks_evbuffer_add_copyonly.exe
 #	bench_kvrocks_evbuffer_add_copyonly_fixed128.exe
@@ -93,6 +99,12 @@ bench_kvrocks_evbuffer_add_fixed128.exe: bench_kvrocks_evbuffer_add_fixed128.obj
 	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_evbuffer_add_fixed128.obj
 bench_kvrocks_evbuffer_add_fixed128_prealloc.exe: bench_kvrocks_evbuffer_add_fixed128_prealloc.obj
 	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_evbuffer_add_fixed128_prealloc.obj
+bench_kvrocks_evbuffer_add_fixed128_prealloc_cb.exe: bench_kvrocks_evbuffer_add_fixed128_prealloc_cb.obj
+	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_evbuffer_add_fixed128_prealloc_cb.obj
+bench_kvrocks_evbuffer_add_fixed128_prealloc_cb_disabled.exe: bench_kvrocks_evbuffer_add_fixed128_prealloc_cb_disabled.obj
+	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_evbuffer_add_fixed128_prealloc_cb_disabled.obj
+bench_kvrocks_evbuffer_add_fixed128_shortpath.exe: bench_kvrocks_evbuffer_add_fixed128_shortpath.obj
+	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_evbuffer_add_fixed128_shortpath.obj
 bench_kvrocks_evbuffer_add_prealloc.exe: bench_kvrocks_evbuffer_add_prealloc.obj
 	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_evbuffer_add_prealloc.obj
 bench_kvrocks_evbuffer_add_copyonly.exe: bench_kvrocks_evbuffer_add_copyonly.obj
