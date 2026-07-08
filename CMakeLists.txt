@@ -1055,13 +1055,10 @@ if (NOT EVENT__DISABLE_BENCHMARK)
     foreach (BENCHMARK bench_http bench_httpclient
                       bench_kvrocks_evbuffer_add
                       bench_kvrocks_evbuffer_add_fixed128
+                      bench_kvrocks_evbuffer_add_fixed128_prealloc
                       bench_kvrocks_evbuffer_add_prealloc
                       bench_kvrocks_evbuffer_add_copyonly
                       bench_kvrocks_evbuffer_add_copyonly_fixed128
-                      bench_kvrocks_evbuffer_add_metadata
-                      bench_kvrocks_evbuffer_add_direct
-                      bench_kvrocks_evbuffer_add_direct_nocb
-                      bench_kvrocks_evbuffer_add_direct_inlinecopy128
                       bench_kvrocks_evbuffer_readln
                       bench_kvrocks_evbuffer_drain
                       bench_kvrocks_bufferevent_readcb

@@ -26,13 +26,10 @@ OTHER_OBJS=test-init.obj test-eof.obj test-closed.obj test-weof.obj test-time.ob
 	bench.obj bench_cascade.obj bench_http.obj bench_httpclient.obj \
 	bench_kvrocks_evbuffer_add.obj \
 	bench_kvrocks_evbuffer_add_fixed128.obj \
+	bench_kvrocks_evbuffer_add_fixed128_prealloc.obj \
 	bench_kvrocks_evbuffer_add_prealloc.obj \
 	bench_kvrocks_evbuffer_add_copyonly.obj \
 	bench_kvrocks_evbuffer_add_copyonly_fixed128.obj \
-	bench_kvrocks_evbuffer_add_metadata.obj \
-	bench_kvrocks_evbuffer_add_direct.obj \
-	bench_kvrocks_evbuffer_add_direct_nocb.obj \
-	bench_kvrocks_evbuffer_add_direct_inlinecopy128.obj \
 	bench_kvrocks_evbuffer_readln.obj \
 	bench_kvrocks_evbuffer_drain.obj \
 	bench_kvrocks_bufferevent_readcb.obj \
@@ -49,13 +46,10 @@ PROGRAMS=regress.exe \
 #	bench.exe bench_cascade.exe bench_http.exe bench_httpclient.exe
 #	bench_kvrocks_evbuffer_add.exe
 #	bench_kvrocks_evbuffer_add_fixed128.exe
+#	bench_kvrocks_evbuffer_add_fixed128_prealloc.exe
 #	bench_kvrocks_evbuffer_add_prealloc.exe
 #	bench_kvrocks_evbuffer_add_copyonly.exe
 #	bench_kvrocks_evbuffer_add_copyonly_fixed128.exe
-#	bench_kvrocks_evbuffer_add_metadata.exe
-#	bench_kvrocks_evbuffer_add_direct.exe
-#	bench_kvrocks_evbuffer_add_direct_nocb.exe
-#	bench_kvrocks_evbuffer_add_direct_inlinecopy128.exe
 #	bench_kvrocks_evbuffer_readln.exe
 #	bench_kvrocks_evbuffer_drain.exe
 #	bench_kvrocks_bufferevent_readcb.exe
@@ -97,20 +91,14 @@ bench_kvrocks_evbuffer_add.exe: bench_kvrocks_evbuffer_add.obj
 	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_evbuffer_add.obj
 bench_kvrocks_evbuffer_add_fixed128.exe: bench_kvrocks_evbuffer_add_fixed128.obj
 	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_evbuffer_add_fixed128.obj
+bench_kvrocks_evbuffer_add_fixed128_prealloc.exe: bench_kvrocks_evbuffer_add_fixed128_prealloc.obj
+	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_evbuffer_add_fixed128_prealloc.obj
 bench_kvrocks_evbuffer_add_prealloc.exe: bench_kvrocks_evbuffer_add_prealloc.obj
 	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_evbuffer_add_prealloc.obj
 bench_kvrocks_evbuffer_add_copyonly.exe: bench_kvrocks_evbuffer_add_copyonly.obj
 	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_evbuffer_add_copyonly.obj
 bench_kvrocks_evbuffer_add_copyonly_fixed128.exe: bench_kvrocks_evbuffer_add_copyonly_fixed128.obj
 	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_evbuffer_add_copyonly_fixed128.obj
-bench_kvrocks_evbuffer_add_metadata.exe: bench_kvrocks_evbuffer_add_metadata.obj
-	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_evbuffer_add_metadata.obj
-bench_kvrocks_evbuffer_add_direct.exe: bench_kvrocks_evbuffer_add_direct.obj
-	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_evbuffer_add_direct.obj
-bench_kvrocks_evbuffer_add_direct_nocb.exe: bench_kvrocks_evbuffer_add_direct_nocb.obj
-	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_evbuffer_add_direct_nocb.obj
-bench_kvrocks_evbuffer_add_direct_inlinecopy128.exe: bench_kvrocks_evbuffer_add_direct_inlinecopy128.obj
-	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_evbuffer_add_direct_inlinecopy128.obj
 bench_kvrocks_evbuffer_readln.exe: bench_kvrocks_evbuffer_readln.obj
 	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_evbuffer_readln.obj
 bench_kvrocks_evbuffer_drain.exe: bench_kvrocks_evbuffer_drain.obj
