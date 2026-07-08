@@ -1059,6 +1059,7 @@ if (NOT EVENT__DISABLE_BENCHMARK)
                       bench_kvrocks_evbuffer_add_fixed128_prealloc_cb
                       bench_kvrocks_evbuffer_add_fixed128_prealloc_cb_disabled
                       bench_kvrocks_evbuffer_add_fixed128_shortpath
+                      bench_kvrocks_evbuffer_add_fixed128_shortpath_calls
                       bench_kvrocks_evbuffer_add_prealloc
                       bench_kvrocks_evbuffer_add_copyonly
                       bench_kvrocks_evbuffer_add_copyonly_fixed128
