@@ -51,11 +51,14 @@ usage(const char *prog)
 static void
 consume_buffer(const char *dst, size_t len)
 {
-	size_t i;
+	const volatile unsigned char *p = (const volatile unsigned char *)dst;
 	unsigned int acc = copy_sink;
 
-	for (i = 0; i < len; ++i)
-		acc += (unsigned char)dst[i];
+	if (len != 0) {
+		acc += p[0];
+		acc += p[len / 2];
+		acc += p[len - 1];
+	}
 	copy_sink = acc;
 }
 

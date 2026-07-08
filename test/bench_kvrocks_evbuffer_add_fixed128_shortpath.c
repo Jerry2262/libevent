@@ -73,11 +73,14 @@ elapsed_usec(const struct timeval *start, const struct timeval *end)
 static void
 consume_buffer(const unsigned char *dst, size_t len)
 {
-	size_t i;
+	const volatile unsigned char *p = (const volatile unsigned char *)dst;
 	unsigned int acc = shortpath_sink;
 
-	for (i = 0; i < len; ++i)
-		acc += dst[i];
+	if (len != 0) {
+		acc += p[0];
+		acc += p[len / 2];
+		acc += p[len - 1];
+	}
 	shortpath_sink = acc;
 }
 
