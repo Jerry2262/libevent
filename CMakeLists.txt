@@ -1095,6 +1095,19 @@ if (NOT EVENT__DISABLE_BENCHMARK)
             event_core_static
             ${LIB_APPS}
             ${LIB_PLATFORM})
+
+        add_executable(bench_kvrocks_evbuffer_add_fixed128_shortpath_realstruct_invoke
+                       test/bench_kvrocks_evbuffer_add_fixed128_shortpath_realstruct.c)
+        target_compile_definitions(
+            bench_kvrocks_evbuffer_add_fixed128_shortpath_realstruct_invoke
+            PRIVATE
+            BENCH_NAME="evbuffer_add_fixed128_shortpath_realstruct_invoke"
+            BENCH_USE_REAL_INVOKE)
+        target_link_libraries(
+            bench_kvrocks_evbuffer_add_fixed128_shortpath_realstruct_invoke
+            event_core_static
+            ${LIB_APPS}
+            ${LIB_PLATFORM})
     endif()
     if (EVENT__HAVE_PTHREADS)
         add_bench_prog(bench_kvrocks_evbuffer_add_fixed128_prealloc_lock

@@ -38,6 +38,9 @@
 #define DEFAULT_DURATION 3
 #define DEFAULT_VALUE_SIZE 128
 #define BATCH_OPS 4096
+#ifndef BENCH_NAME
+#define BENCH_NAME "evbuffer_add_fixed128_shortpath_realstruct"
+#endif
 
 static volatile unsigned int realstruct_sink;
 
@@ -97,8 +100,12 @@ realstruct_add(struct evbuffer *buf, const void *data_in, size_t datlen)
 	buf->total_len += datlen;
 	buf->n_add_for_cb += datlen;
 
+#ifdef BENCH_USE_REAL_INVOKE
+	evbuffer_invoke_callbacks_(buf);
+#else
 	if (LIST_EMPTY(&buf->callbacks))
 		buf->n_add_for_cb = buf->n_del_for_cb = 0;
+#endif
 
 	result = 0;
 done:
@@ -208,8 +215,7 @@ main(int argc, char **argv)
 			break;
 	}
 
-	printf("bench=evbuffer_add_fixed128_shortpath_realstruct "
-	    "ns_per_op=%.2f\n",
+	printf("bench=%s ns_per_op=%.2f\n", BENCH_NAME,
 	    done ? (double)total_usec * 1000.0 / done : 0.0);
 
 	free(storage);
