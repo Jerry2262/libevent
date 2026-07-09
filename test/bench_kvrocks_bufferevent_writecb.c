@@ -250,14 +250,9 @@ main(int argc, char **argv)
 	evutil_gettimeofday(&end, NULL);
 
 	usec = elapsed_usec(&start, &end);
-	printf("bench=bufferevent_writecb ops=%ld bytes=" U64_FMT
-	    " conns=%ld reply_size=%ld peer_bytes=" U64_FMT
-	    " usec=%ld ops_sec=%.2f mb_sec=%.2f\n",
-	    completed_writes, bytes_written, n_conns, reply_size, bytes_read,
-	    usec,
-	    usec ? (double)completed_writes * 1000000.0 / usec : 0.0,
-	    usec ? (double)bytes_written / (1024.0 * 1024.0) * 1000000.0 /
-		usec : 0.0);
+	printf("bench=bufferevent_writecb ns_per_op=%.2f\n",
+	    completed_writes ? (double)usec * 1000.0 / completed_writes :
+	    0.0);
 
 	for (i = 0; i < n_conns; ++i) {
 		if (conns[i].writer)

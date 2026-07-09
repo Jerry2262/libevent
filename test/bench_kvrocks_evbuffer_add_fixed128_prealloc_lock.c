@@ -58,7 +58,6 @@ main(int argc, char **argv)
 	long duration = DEFAULT_DURATION;
 	long target_usec;
 	long i, done, todo;
-	bench_u64 bytes = 0;
 	long total_usec = 0;
 	int c;
 
@@ -138,7 +137,6 @@ main(int argc, char **argv)
 				free(value);
 				return 1;
 			}
-			bytes += (bench_u64)value_size;
 		}
 		evutil_gettimeofday(&end, NULL);
 		total_usec += elapsed_usec(&start, &end);
@@ -149,12 +147,8 @@ main(int argc, char **argv)
 			break;
 	}
 
-	printf("bench=evbuffer_add_fixed128_prealloc_lock ops=%ld bytes="
-	    U64_FMT " usec=%ld ops_sec=%.2f mb_sec=%.2f\n",
-	    done, bytes, total_usec,
-	    total_usec ? (double)done * 1000000.0 / total_usec : 0.0,
-	    total_usec ? (double)bytes / (1024.0 * 1024.0) * 1000000.0 /
-		total_usec : 0.0);
+	printf("bench=evbuffer_add_fixed128_prealloc_lock ns_per_op=%.2f\n",
+	    done ? (double)total_usec * 1000.0 / done : 0.0);
 
 	free(value);
 	return 0;

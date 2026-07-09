@@ -76,7 +76,6 @@ main(int argc, char **argv)
 	long duration = DEFAULT_DURATION;
 	long target_usec;
 	long i, done, todo;
-	bench_u64 bytes = 0;
 	long total_usec = 0;
 	int c;
 
@@ -165,7 +164,6 @@ main(int argc, char **argv)
 
 			memcpy(dst + off, data, len);
 			off += len;
-			bytes += (bench_u64)len;
 		}
 		evutil_gettimeofday(&end, NULL);
 		total_usec += elapsed_usec(&start, &end);
@@ -175,12 +173,8 @@ main(int argc, char **argv)
 			break;
 	}
 
-	printf("bench=evbuffer_add_copyonly ops=%ld bytes=" U64_FMT
-	    " usec=%ld ops_sec=%.2f mb_sec=%.2f sink=%u\n",
-	    done, bytes, total_usec,
-	    total_usec ? (double)done * 1000000.0 / total_usec : 0.0,
-	    total_usec ? (double)bytes / (1024.0 * 1024.0) * 1000000.0 /
-		total_usec : 0.0, copy_sink);
+	printf("bench=evbuffer_add_copyonly ns_per_op=%.2f\n",
+	    done ? (double)total_usec * 1000.0 / done : 0.0);
 
 	free(dst);
 	free(value);
