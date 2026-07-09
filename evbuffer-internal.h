@@ -337,7 +337,23 @@ int evbuffer_read_setup_vecs_(struct evbuffer *buf, ev_ssize_t howmuch,
 /** Set the parent bufferevent object for buf to bev */
 void evbuffer_set_parent_(struct evbuffer *buf, struct bufferevent *bev);
 
-void evbuffer_invoke_callbacks_(struct evbuffer *buf);
+void evbuffer_invoke_callbacks_slow_(struct evbuffer *buf);
+
+/** Invoke pending callbacks for buf.
+ *
+ * Fast path: when no callbacks are registered (the common case during
+ * high-throughput buffer operations), clear the add/del counters and return
+ * without an out-of-line call.  The slow path -- deferred-callback
+ * scheduling and callback iteration -- lives in buffer.c. */
+static inline void
+evbuffer_invoke_callbacks_(struct evbuffer *buf)
+{
+	if (LIST_EMPTY(&buf->callbacks)) {
+		buf->n_add_for_cb = buf->n_del_for_cb = 0;
+		return;
+	}
+	evbuffer_invoke_callbacks_slow_(buf);
+}
 
 
 int evbuffer_get_callbacks_(struct evbuffer *buffer,
