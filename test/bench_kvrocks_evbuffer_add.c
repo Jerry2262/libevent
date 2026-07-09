@@ -22,6 +22,9 @@
 #define DEFAULT_DURATION 3
 #define DEFAULT_VALUE_SIZE 128
 #define BATCH_OPS 4096
+#ifndef BENCH_NAME
+#define BENCH_NAME "evbuffer_add"
+#endif
 
 #ifdef _WIN32
 #define U64_FMT "%I64u"
@@ -151,7 +154,7 @@ main(int argc, char **argv)
 			break;
 	}
 
-	printf("bench=evbuffer_add ns_per_op=%.2f\n",
+	printf("bench=%s ns_per_op=%.2f\n", BENCH_NAME,
 	    done ? (double)total_usec * 1000.0 / done : 0.0);
 
 	free(value);
