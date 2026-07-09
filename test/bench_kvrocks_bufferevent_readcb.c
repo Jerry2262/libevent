@@ -250,12 +250,8 @@ main(int argc, char **argv)
 	evutil_gettimeofday(&end, NULL);
 
 	usec = elapsed_usec(&start, &end);
-	printf("bench=bufferevent_readcb ops=%ld bytes=" U64_FMT
-	    " conns=%ld block_size=%ld usec=%ld ops_sec=%.2f mb_sec=%.2f\n",
-	    read_events, bytes_read, n_conns, block_size, usec,
-	    usec ? (double)read_events * 1000000.0 / usec : 0.0,
-	    usec ? (double)bytes_read / (1024.0 * 1024.0) * 1000000.0 /
-		usec : 0.0);
+	printf("bench=bufferevent_readcb ns_per_op=%.2f\n",
+	    read_events ? (double)usec * 1000.0 / read_events : 0.0);
 
 	for (i = 0; i < n_conns; ++i) {
 		if (conns[i].bev)
