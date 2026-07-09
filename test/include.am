@@ -27,6 +27,7 @@ TESTPROGRAMS = \
 	test/bench_kvrocks_evbuffer_add_fixed128_prealloc_cb_disabled \
 	test/bench_kvrocks_evbuffer_add_fixed128_shortpath \
 	test/bench_kvrocks_evbuffer_add_fixed128_shortpath_calls \
+	test/bench_kvrocks_evbuffer_add_fixed128_shortpath_realstruct \
 	test/bench_kvrocks_evbuffer_add_prealloc	\
 	test/bench_kvrocks_evbuffer_add_copyonly	\
 	test/bench_kvrocks_evbuffer_add_copyonly_fixed128 \
@@ -187,6 +188,8 @@ test_bench_kvrocks_evbuffer_add_fixed128_shortpath_SOURCES = test/bench_kvrocks_
 test_bench_kvrocks_evbuffer_add_fixed128_shortpath_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
 test_bench_kvrocks_evbuffer_add_fixed128_shortpath_calls_SOURCES = test/bench_kvrocks_evbuffer_add_fixed128_shortpath_calls.c
 test_bench_kvrocks_evbuffer_add_fixed128_shortpath_calls_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
+test_bench_kvrocks_evbuffer_add_fixed128_shortpath_realstruct_SOURCES = test/bench_kvrocks_evbuffer_add_fixed128_shortpath_realstruct.c
+test_bench_kvrocks_evbuffer_add_fixed128_shortpath_realstruct_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la
 if PTHREADS
 test_bench_kvrocks_evbuffer_add_fixed128_prealloc_lock_SOURCES = test/bench_kvrocks_evbuffer_add_fixed128_prealloc_lock.c
 test_bench_kvrocks_evbuffer_add_fixed128_prealloc_lock_LDADD = $(LIBEVENT_GC_SECTIONS) libevent.la $(PTHREAD_LIBS)

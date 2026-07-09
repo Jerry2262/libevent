@@ -31,6 +31,7 @@ OTHER_OBJS=test-init.obj test-eof.obj test-closed.obj test-weof.obj test-time.ob
 	bench_kvrocks_evbuffer_add_fixed128_prealloc_cb_disabled.obj \
 	bench_kvrocks_evbuffer_add_fixed128_shortpath.obj \
 	bench_kvrocks_evbuffer_add_fixed128_shortpath_calls.obj \
+	bench_kvrocks_evbuffer_add_fixed128_shortpath_realstruct.obj \
 	bench_kvrocks_evbuffer_add_prealloc.obj \
 	bench_kvrocks_evbuffer_add_copyonly.obj \
 	bench_kvrocks_evbuffer_add_copyonly_fixed128.obj \
@@ -55,6 +56,7 @@ PROGRAMS=regress.exe \
 #	bench_kvrocks_evbuffer_add_fixed128_prealloc_cb_disabled.exe
 #	bench_kvrocks_evbuffer_add_fixed128_shortpath.exe
 #	bench_kvrocks_evbuffer_add_fixed128_shortpath_calls.exe
+#	bench_kvrocks_evbuffer_add_fixed128_shortpath_realstruct.exe
 #	bench_kvrocks_evbuffer_add_prealloc.exe
 #	bench_kvrocks_evbuffer_add_copyonly.exe
 #	bench_kvrocks_evbuffer_add_copyonly_fixed128.exe
@@ -109,6 +111,8 @@ bench_kvrocks_evbuffer_add_fixed128_shortpath.exe: bench_kvrocks_evbuffer_add_fi
 	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_evbuffer_add_fixed128_shortpath.obj
 bench_kvrocks_evbuffer_add_fixed128_shortpath_calls.exe: bench_kvrocks_evbuffer_add_fixed128_shortpath_calls.obj
 	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_evbuffer_add_fixed128_shortpath_calls.obj
+bench_kvrocks_evbuffer_add_fixed128_shortpath_realstruct.exe: bench_kvrocks_evbuffer_add_fixed128_shortpath_realstruct.obj
+	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_evbuffer_add_fixed128_shortpath_realstruct.obj
 bench_kvrocks_evbuffer_add_prealloc.exe: bench_kvrocks_evbuffer_add_prealloc.obj
 	$(CC) $(CFLAGS) $(LIBS) bench_kvrocks_evbuffer_add_prealloc.obj
 bench_kvrocks_evbuffer_add_copyonly.exe: bench_kvrocks_evbuffer_add_copyonly.obj
