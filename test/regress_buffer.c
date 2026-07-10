@@ -970,6 +970,63 @@ end:
 	evbuffer_free(buf);
 }
 
+static void
+test_evbuffer_add_short_alignments(void *ptr)
+{
+	static const size_t lengths[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 128 };
+	unsigned char source[128 + 8];
+	unsigned char prefix[8];
+	struct evbuffer *buf = NULL;
+	unsigned char *contents;
+	size_t source_offset, destination_offset, length_idx;
+	size_t length, expected_length;
+
+	for (source_offset = 0; source_offset < ARRAY_SIZE(source); ++source_offset)
+		source[source_offset] = (unsigned char)(source_offset + 1);
+	for (destination_offset = 0;
+	    destination_offset < ARRAY_SIZE(prefix); ++destination_offset)
+		prefix[destination_offset] =
+		    (unsigned char)(0xa0 + destination_offset);
+
+	for (source_offset = 0; source_offset < 8; ++source_offset) {
+		for (destination_offset = 0; destination_offset < 8;
+		    ++destination_offset) {
+			for (length_idx = 0; length_idx < ARRAY_SIZE(lengths);
+			    ++length_idx) {
+				length = lengths[length_idx];
+				expected_length = destination_offset + length;
+				buf = evbuffer_new();
+				tt_assert(buf);
+
+				tt_int_op(evbuffer_add(buf, prefix,
+				    destination_offset), ==, 0);
+				tt_int_op(evbuffer_add(buf, source + source_offset,
+				    length), ==, 0);
+				tt_int_op(evbuffer_get_length(buf), ==,
+				    expected_length);
+
+				if (expected_length) {
+					contents = evbuffer_pullup(buf, -1);
+					tt_assert(contents);
+					if (destination_offset)
+						tt_mem_op(contents, ==, prefix,
+						    destination_offset);
+					if (length)
+						tt_mem_op(contents + destination_offset,
+						    ==, source + source_offset, length);
+				}
+
+				evbuffer_free(buf);
+				buf = NULL;
+			}
+		}
+	}
+
+end:
+	if (buf)
+		evbuffer_free(buf);
+}
+
 static int reference_cb_called;
 static void
 reference_cb(const void *data, size_t len, void *extra)
@@ -2818,6 +2875,7 @@ struct testcase_t evbuffer_testcases[] = {
 	{ "expand_overflow", test_evbuffer_expand_overflow, 0, NULL, NULL },
 	{ "add1", test_evbuffer_add1, 0, NULL, NULL },
 	{ "add2", test_evbuffer_add2, 0, NULL, NULL },
+	{ "add_short_alignments", test_evbuffer_add_short_alignments, 0, NULL, NULL },
 	{ "reference", test_evbuffer_reference, 0, NULL, NULL },
 	{ "reference2", test_evbuffer_reference2, 0, NULL, NULL },
 	{ "iterative", test_evbuffer_iterative, 0, NULL, NULL },

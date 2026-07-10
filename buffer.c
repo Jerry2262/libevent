@@ -1719,6 +1719,23 @@ done:
 
 #define EVBUFFER_CHAIN_MAX_AUTO_SIZE 4096
 
+static inline void
+evbuffer_add_hot_copy(unsigned char *dst, const unsigned char *src, size_t len)
+{
+#if defined(__aarch64__) && (defined(__GNUC__) || defined(__clang__))
+	if (len == 5)
+		__builtin_memcpy(dst, src, 5);
+	else if (len == 4)
+		__builtin_memcpy(dst, src, 4);
+	else if (len == 6)
+		__builtin_memcpy(dst, src, 6);
+	else if (len == 2)
+		__builtin_memcpy(dst, src, 2);
+	else
+#endif
+		memcpy(dst, src, len);
+}
+
 /* Adds data to an event buffer */
 
 int
@@ -1762,7 +1779,8 @@ evbuffer_add(struct evbuffer *buf, const void *data_in, size_t datlen)
 		if (remain >= datlen) {
 			/* there's enough space to hold all the data in the
 			 * current last chain */
-			memcpy(chain->buffer + chain->misalign + chain->off,
+			evbuffer_add_hot_copy(
+			    chain->buffer + chain->misalign + chain->off,
 			    data, datlen);
 			chain->off += datlen;
 			buf->total_len += datlen;
