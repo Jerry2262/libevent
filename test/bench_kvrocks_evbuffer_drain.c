@@ -1,5 +1,22 @@
 /*
  * Benchmark evbuffer_drain() with Kvrocks-like RESP payload consumption.
+ *
+ * Linux perf profiling mode prepares all chains before perf starts sampling.
+ * It preallocates the complete -n workload, so choose -n with available memory
+ * in mind.  The duration limit is disabled in this mode.
+ *
+ * Terminal 1:
+ *   ./build/bin/bench_kvrocks_evbuffer_drain -p -n 1000000
+ *   # Wait for: profile_ready pid=<pid>
+ *
+ * Terminal 2:
+ *   perf record -g -p <pid>
+ *
+ * After perf reports that it is attached, resume the benchmark in terminal 1:
+ *   kill -CONT <pid>
+ *
+ * perf exits when the benchmark exits.  Inspect the result with perf report or
+ * perf annotate evbuffer_drain.
  */
 
 #include <sys/types.h>
@@ -7,6 +24,9 @@
 #include <winsock2.h>
 #else
 #include <unistd.h>
+#endif
+#ifdef __linux__
+#include <signal.h>
 #endif
 #include <stdlib.h>
 #include <stdio.h>
@@ -41,7 +61,8 @@ elapsed_usec(const struct timeval *start, const struct timeval *end)
 static void
 usage(const char *prog)
 {
-	fprintf(stderr, "Usage: %s [-n evbuffer_drain_calls] [-d seconds]\n",
+	fprintf(stderr,
+	    "Usage: %s [-n evbuffer_drain_calls] [-d seconds] [-p]\n",
 	    prog);
 	exit(1);
 }
@@ -90,6 +111,34 @@ prepare_buffer(struct evbuffer *buf, char *chunk, long first, long count)
 	return 0;
 }
 
+#ifdef __linux__
+static int
+run_profile(struct evbuffer *buf, long ops, long *total_usec)
+{
+	struct timeval start, end;
+	long i;
+
+	fprintf(stderr, "profile_ready pid=%ld\n", (long)getpid());
+	fflush(stderr);
+	if (raise(SIGSTOP) != 0) {
+		perror("raise(SIGSTOP)");
+		return -1;
+	}
+
+	evutil_gettimeofday(&start, NULL);
+	for (i = 0; i < ops; ++i) {
+		size_t n = drain_len_for_op(i);
+		if (evbuffer_drain(buf, n) < 0) {
+			fprintf(stderr, "evbuffer_drain failed\n");
+			return -1;
+		}
+	}
+	evutil_gettimeofday(&end, NULL);
+	*total_usec = elapsed_usec(&start, &end);
+	return 0;
+}
+#endif
+
 int
 main(int argc, char **argv)
 {
@@ -99,15 +148,19 @@ main(int argc, char **argv)
 	long target_usec;
 	long done, todo, i;
 	long total_usec = 0;
+	int profile = 0;
 	int c;
 
-	while ((c = getopt(argc, argv, "n:d:h")) != -1) {
+	while ((c = getopt(argc, argv, "n:d:ph")) != -1) {
 		switch (c) {
 		case 'n':
 			ops = atol(optarg);
 			break;
 		case 'd':
 			duration = atol(optarg);
+			break;
+		case 'p':
+			profile = 1;
 			break;
 		case 'h':
 		default:
@@ -117,9 +170,18 @@ main(int argc, char **argv)
 
 	if (ops < 0 || duration < 0)
 		usage(argv[0]);
-	if (ops == 0 && duration == 0)
+	if (profile) {
+#ifdef __linux__
+		if (ops <= 0)
+			usage(argv[0]);
+#else
+		fprintf(stderr, "-p is supported only on Linux\n");
+		return 1;
+#endif
+	} else if (ops == 0 && duration == 0) {
 		usage(argv[0]);
-	target_usec = duration * 1000000L;
+	}
+	target_usec = profile ? 0 : duration * 1000000L;
 
 	chunk = malloc(CHUNK_SIZE);
 	if (chunk == NULL) {
@@ -128,49 +190,74 @@ main(int argc, char **argv)
 	}
 	memset(chunk, 'd', CHUNK_SIZE);
 
-	for (done = 0; ops == 0 || done < ops; done += todo) {
-		struct evbuffer *buf;
-		struct timeval start, end;
+	if (profile) {
+#ifdef __linux__
+		struct evbuffer *buf = evbuffer_new();
 
-		if (ops == 0)
-			todo = BATCH_DRAINS;
-		else {
-			todo = ops - done;
-			if (todo > BATCH_DRAINS)
-				todo = BATCH_DRAINS;
-		}
-
-		buf = evbuffer_new();
 		if (buf == NULL) {
 			fprintf(stderr, "evbuffer_new failed\n");
 			free(chunk);
 			return 1;
 		}
-
-		if (prepare_buffer(buf, chunk, done, todo) < 0) {
+		if (prepare_buffer(buf, chunk, 0, ops) < 0) {
 			fprintf(stderr, "evbuffer_add_reference failed\n");
 			evbuffer_free(buf);
 			free(chunk);
 			return 1;
 		}
+		if (run_profile(buf, ops, &total_usec) < 0) {
+			evbuffer_free(buf);
+			free(chunk);
+			return 1;
+		}
+		evbuffer_free(buf);
+		done = ops;
+#endif
+	} else {
+		for (done = 0; ops == 0 || done < ops; done += todo) {
+			struct evbuffer *buf;
+			struct timeval start, end;
 
-		evutil_gettimeofday(&start, NULL);
-		for (i = 0; i < todo; ++i) {
-			size_t n = drain_len_for_op(done + i);
-			if (evbuffer_drain(buf, n) < 0) {
-				fprintf(stderr, "evbuffer_drain failed\n");
+			if (ops == 0)
+				todo = BATCH_DRAINS;
+			else {
+				todo = ops - done;
+				if (todo > BATCH_DRAINS)
+					todo = BATCH_DRAINS;
+			}
+
+			buf = evbuffer_new();
+			if (buf == NULL) {
+				fprintf(stderr, "evbuffer_new failed\n");
+				free(chunk);
+				return 1;
+			}
+
+			if (prepare_buffer(buf, chunk, done, todo) < 0) {
+				fprintf(stderr, "evbuffer_add_reference failed\n");
 				evbuffer_free(buf);
 				free(chunk);
 				return 1;
 			}
+
+			evutil_gettimeofday(&start, NULL);
+			for (i = 0; i < todo; ++i) {
+				size_t n = drain_len_for_op(done + i);
+				if (evbuffer_drain(buf, n) < 0) {
+					fprintf(stderr, "evbuffer_drain failed\n");
+					evbuffer_free(buf);
+					free(chunk);
+					return 1;
+				}
+			}
+			evutil_gettimeofday(&end, NULL);
+			total_usec += elapsed_usec(&start, &end);
+
+			evbuffer_free(buf);
+
+			if (target_usec > 0 && total_usec >= target_usec)
+				break;
 		}
-		evutil_gettimeofday(&end, NULL);
-		total_usec += elapsed_usec(&start, &end);
-
-		evbuffer_free(buf);
-
-		if (target_usec > 0 && total_usec >= target_usec)
-			break;
 	}
 
 	printf("bench=evbuffer_drain ns_per_op=%.2f\n",
