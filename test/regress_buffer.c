@@ -1027,6 +1027,110 @@ end:
 		evbuffer_free(buf);
 }
 
+static void log_change_callback(struct evbuffer *,
+    const struct evbuffer_cb_info *, void *);
+
+static void
+test_evbuffer_add_short_guard_fallbacks(void *ptr)
+{
+	static const char short_data[] = "abcd";
+	struct evbuffer *buf = NULL;
+	struct evbuffer *out = NULL;
+	struct evbuffer_chain *chain, *old_last;
+	unsigned char *contents;
+	unsigned char *fill = NULL;
+	size_t fill_length, initial_length, remain;
+
+	/* A callback must force an otherwise eligible add through accounting. */
+	buf = evbuffer_new();
+	out = evbuffer_new();
+	tt_assert(buf);
+	tt_assert(out);
+	tt_int_op(evbuffer_add(buf, "s", 1), ==, 0);
+	tt_assert(evbuffer_add_cb(buf, log_change_callback, out));
+	tt_int_op(evbuffer_add(buf, short_data, 4), ==, 0);
+	tt_uint_op(evbuffer_get_length(buf), ==, 5);
+	tt_uint_op(evbuffer_get_length(out), ==, 6);
+	tt_mem_op(evbuffer_pullup(out, -1), ==, "1->5; ", 6);
+	tt_mem_op(evbuffer_pullup(buf, -1), ==, "sabcd", 5);
+	evbuffer_free(buf);
+	buf = NULL;
+	evbuffer_free(out);
+	out = NULL;
+
+	/* A frozen end must reject the add without changing existing data. */
+	buf = evbuffer_new();
+	tt_assert(buf);
+	tt_int_op(evbuffer_add(buf, "seed", 4), ==, 0);
+	tt_int_op(evbuffer_freeze(buf, 0), ==, 0);
+	tt_int_op(evbuffer_add(buf, short_data, 4), ==, -1);
+	tt_uint_op(evbuffer_get_length(buf), ==, 4);
+	tt_mem_op(evbuffer_pullup(buf, -1), ==, "seed", 4);
+	tt_int_op(evbuffer_unfreeze(buf, 0), ==, 0);
+	evbuffer_free(buf);
+	buf = NULL;
+
+	/* An immutable final chain must not be modified in place. */
+	buf = evbuffer_new();
+	tt_assert(buf);
+	tt_int_op(evbuffer_add_reference(buf, "ref", 3, NULL, NULL), ==, 0);
+	tt_int_op(evbuffer_add(buf, short_data, 4), ==, 0);
+	tt_uint_op(evbuffer_get_length(buf), ==, 7);
+	tt_mem_op(evbuffer_pullup(buf, -1), ==, "refabcd", 7);
+	evbuffer_free(buf);
+	buf = NULL;
+
+	/* Leave less than four bytes in a mutable chain to force allocation. */
+	buf = evbuffer_new();
+	tt_assert(buf);
+	tt_int_op(evbuffer_add(buf, "p", 1), ==, 0);
+	chain = buf->last;
+	tt_assert(chain);
+	remain = chain->buffer_len - chain->misalign - chain->off;
+	tt_assert(remain >= 4);
+	fill_length = remain - 3;
+	fill = malloc(fill_length);
+	tt_assert(fill);
+	memset(fill, 'x', fill_length);
+	tt_int_op(evbuffer_add(buf, fill, fill_length), ==, 0);
+	tt_assert(buf->last == chain);
+	initial_length = evbuffer_get_length(buf);
+	old_last = buf->last;
+	tt_int_op(evbuffer_add(buf, short_data, 4), ==, 0);
+	tt_uint_op(evbuffer_get_length(buf), ==, initial_length + 4);
+	tt_assert(buf->last != old_last);
+	contents = evbuffer_pullup(buf, -1);
+	tt_assert(contents);
+	tt_int_op(contents[0], ==, 'p');
+	if (fill_length)
+		tt_mem_op(contents + 1, ==, fill, fill_length);
+	tt_mem_op(contents + initial_length, ==, short_data, 4);
+
+end:
+	free(fill);
+	if (buf)
+		evbuffer_free(buf);
+	if (out)
+		evbuffer_free(out);
+}
+
+static void
+test_evbuffer_add_short_locked_fallback(void *ptr)
+{
+	struct evbuffer *buf = evbuffer_new();
+
+	tt_assert(buf);
+	tt_int_op(evbuffer_add(buf, "s", 1), ==, 0);
+	tt_int_op(evbuffer_enable_locking(buf, NULL), ==, 0);
+	tt_int_op(evbuffer_add(buf, "abcd", 4), ==, 0);
+	tt_uint_op(evbuffer_get_length(buf), ==, 5);
+	tt_mem_op(evbuffer_pullup(buf, -1), ==, "sabcd", 5);
+
+end:
+	if (buf)
+		evbuffer_free(buf);
+}
+
 static int reference_cb_called;
 static void
 reference_cb(const void *data, size_t len, void *extra)
@@ -2960,6 +3064,10 @@ struct testcase_t evbuffer_testcases[] = {
 	{ "add1", test_evbuffer_add1, 0, NULL, NULL },
 	{ "add2", test_evbuffer_add2, 0, NULL, NULL },
 	{ "add_short_alignments", test_evbuffer_add_short_alignments, 0, NULL, NULL },
+	{ "add_short_guard_fallbacks", test_evbuffer_add_short_guard_fallbacks, 0,
+	  NULL, NULL },
+	{ "add_short_locked_fallback", test_evbuffer_add_short_locked_fallback,
+	  TT_FORK|TT_NEED_THREADS, &basic_setup, NULL },
 	{ "reference", test_evbuffer_reference, 0, NULL, NULL },
 	{ "reference2", test_evbuffer_reference2, 0, NULL, NULL },
 	{ "iterative", test_evbuffer_iterative, 0, NULL, NULL },

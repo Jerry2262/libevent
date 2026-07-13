@@ -1738,8 +1738,14 @@ evbuffer_add_hot_copy(unsigned char *dst, const unsigned char *src, size_t len)
 
 /* Adds data to an event buffer */
 
+#if defined(__aarch64__) && (defined(__GNUC__) || defined(__clang__))
+static int __attribute__((noinline))
+evbuffer_add_general_(struct evbuffer *buf, const void *data_in,
+	size_t datlen)
+#else
 int
 evbuffer_add(struct evbuffer *buf, const void *data_in, size_t datlen)
+#endif
 {
 	struct evbuffer_chain *chain, *tmp;
 	const unsigned char *data = data_in;
@@ -1841,6 +1847,55 @@ done:
 	EVBUFFER_UNLOCK(buf);
 	return result;
 }
+
+#if defined(__aarch64__) && (defined(__GNUC__) || defined(__clang__))
+int
+evbuffer_add(struct evbuffer *buf, const void *data_in, size_t datlen)
+{
+	struct evbuffer_chain *chain;
+	size_t remain;
+
+	if (datlen > 6)
+		return evbuffer_add_general_(buf, data_in, datlen);
+	switch (datlen) {
+	case 2:
+	case 4:
+	case 5:
+	case 6:
+		break;
+	default:
+		return evbuffer_add_general_(buf, data_in, datlen);
+	}
+#ifndef EVENT__DISABLE_THREAD_SUPPORT
+	if (buf->lock != NULL)
+		return evbuffer_add_general_(buf, data_in, datlen);
+#endif
+	if (buf->freeze_end || datlen > EV_SIZE_MAX - buf->total_len ||
+	    !LIST_EMPTY(&buf->callbacks))
+		return evbuffer_add_general_(buf, data_in, datlen);
+
+	EVUTIL_ASSERT(buf->n_add_for_cb == 0);
+	EVUTIL_ASSERT(buf->n_del_for_cb == 0);
+	chain = *buf->last_with_datap;
+	if (chain == NULL)
+		chain = buf->last;
+	if (chain == NULL || (chain->flags & EVBUFFER_IMMUTABLE))
+		return evbuffer_add_general_(buf, data_in, datlen);
+
+	EVUTIL_ASSERT(chain->misalign >= 0 &&
+	    (ev_uint64_t)chain->misalign <= EVBUFFER_CHAIN_MAX);
+	remain = chain->buffer_len - (size_t)chain->misalign - chain->off;
+	if (remain < datlen)
+		return evbuffer_add_general_(buf, data_in, datlen);
+
+	evbuffer_add_hot_copy(
+	    chain->buffer + chain->misalign + chain->off,
+	    data_in, datlen);
+	chain->off += datlen;
+	buf->total_len += datlen;
+	return 0;
+}
+#endif
 
 int
 evbuffer_prepend(struct evbuffer *buf, const void *data, size_t datlen)
