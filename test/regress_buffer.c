@@ -2091,6 +2091,90 @@ test_evbuffer_callbacks(void *ptr)
 		evbuffer_free(buf_out2);
 }
 
+static void
+test_evbuffer_deferred_callback_replacement(void *ptr)
+{
+	struct event_base *base = event_base_new();
+	struct evbuffer *buf = evbuffer_new();
+	struct evbuffer *out = evbuffer_new();
+	struct evbuffer_cb_entry *cb;
+
+	tt_assert(base);
+	tt_assert(buf);
+	tt_assert(out);
+	tt_int_op(evbuffer_defer_callbacks(buf, base), ==, 0);
+
+	cb = evbuffer_add_cb(buf, log_change_callback, out);
+	tt_assert(cb);
+	tt_int_op(evbuffer_add(buf, "abc", 3), ==, 0);
+	tt_int_op(evbuffer_remove_cb_entry(buf, cb), ==, 0);
+	tt_int_op(evbuffer_add(buf, "d", 1), ==, 0);
+
+	cb = evbuffer_add_cb(buf, log_change_callback, out);
+	tt_assert(cb);
+	tt_int_op(evbuffer_add(buf, "e", 1), ==, 0);
+	tt_int_op(event_base_loop(base, EVLOOP_ONCE), ==, 0);
+
+	tt_str_op((const char *)evbuffer_pullup(out, -1), ==, "4->5; ");
+
+end:
+	/* Release any reference held by a deferred callback before teardown. */
+	if (base && buf)
+		event_base_loop(base, EVLOOP_NONBLOCK);
+	if (buf)
+		evbuffer_free(buf);
+	if (out)
+		evbuffer_free(out);
+	if (base)
+		event_base_free(base);
+}
+
+static void
+test_evbuffer_deferred_callback_no_carryover(void *ptr)
+{
+	struct event_base *base = event_base_new();
+	struct evbuffer *buf = evbuffer_new();
+	struct evbuffer *out1 = evbuffer_new();
+	struct evbuffer *out2 = evbuffer_new();
+	struct evbuffer_cb_entry *cb;
+
+	tt_assert(base);
+	tt_assert(buf);
+	tt_assert(out1);
+	tt_assert(out2);
+	tt_int_op(evbuffer_defer_callbacks(buf, base), ==, 0);
+
+	/* Register A, accumulate pending deferred changes, then drop A.
+	 * Removing the last callback zeroes the add/del counters. */
+	cb = evbuffer_add_cb(buf, log_change_callback, out1);
+	tt_assert(cb);
+	tt_int_op(evbuffer_add(buf, "abc", 3), ==, 0);
+	tt_int_op(evbuffer_remove_cb_entry(buf, cb), ==, 0);
+
+	/* A successor registered afterwards must not inherit A's pending
+	 * counters: with no data added since B was registered, B observes
+	 * no change when the deferred callback finally fires. */
+	cb = evbuffer_add_cb(buf, log_change_callback, out2);
+	tt_assert(cb);
+	tt_int_op(event_base_loop(base, EVLOOP_ONCE), ==, 0);
+
+	tt_uint_op(evbuffer_get_length(out1), ==, 0);
+	tt_uint_op(evbuffer_get_length(out2), ==, 0);
+
+end:
+	/* Release any reference held by a deferred callback before teardown. */
+	if (base && buf)
+		event_base_loop(base, EVLOOP_NONBLOCK);
+	if (buf)
+		evbuffer_free(buf);
+	if (out1)
+		evbuffer_free(out1);
+	if (out2)
+		evbuffer_free(out2);
+	if (base)
+		event_base_free(base);
+}
+
 static int ref_done_cb_called_count = 0;
 static void *ref_done_cb_called_with = NULL;
 static const void *ref_done_cb_called_with_data = NULL;
@@ -2885,6 +2969,10 @@ struct testcase_t evbuffer_testcases[] = {
 	{ "ptr_set", test_evbuffer_ptr_set, 0, NULL, NULL },
 	{ "search", test_evbuffer_search, 0, NULL, NULL },
 	{ "callbacks", test_evbuffer_callbacks, 0, NULL, NULL },
+	{ "deferred_callback_replacement",
+	  test_evbuffer_deferred_callback_replacement, TT_FORK, NULL, NULL },
+	{ "deferred_callback_no_carryover",
+	  test_evbuffer_deferred_callback_no_carryover, TT_FORK, NULL, NULL },
 	{ "add_reference", test_evbuffer_add_reference, 0, NULL, NULL },
 	{ "multicast", test_evbuffer_multicast, 0, NULL, NULL },
 	{ "multicast_drain", test_evbuffer_multicast_drain, 0, NULL, NULL },

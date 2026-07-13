@@ -1784,6 +1784,12 @@ evbuffer_add(struct evbuffer *buf, const void *data_in, size_t datlen)
 			    data, datlen);
 			chain->off += datlen;
 			buf->total_len += datlen;
+			if (LIST_EMPTY(&buf->callbacks)) {
+				EVUTIL_ASSERT(buf->n_add_for_cb == 0);
+				EVUTIL_ASSERT(buf->n_del_for_cb == 0);
+				result = 0;
+				goto done;
+			}
 			buf->n_add_for_cb += datlen;
 			goto out;
 		} else if (!CHAIN_PINNED(chain) &&
@@ -3333,11 +3339,14 @@ evbuffer_setcb(struct evbuffer *buffer, evbuffer_cb cb, void *cbarg)
 		struct evbuffer_cb_entry *ent =
 		    evbuffer_add_cb(buffer, NULL, cbarg);
 		if (!ent) {
+			buffer->n_add_for_cb = buffer->n_del_for_cb = 0;
 			EVBUFFER_UNLOCK(buffer);
 			return -1;
 		}
 		ent->cb.cb_obsolete = cb;
 		ent->flags |= EVBUFFER_CB_OBSOLETE;
+	} else {
+		buffer->n_add_for_cb = buffer->n_del_for_cb = 0;
 	}
 	EVBUFFER_UNLOCK(buffer);
 	return 0;
@@ -3364,6 +3373,8 @@ evbuffer_remove_cb_entry(struct evbuffer *buffer,
 {
 	EVBUFFER_LOCK(buffer);
 	LIST_REMOVE(ent, next);
+	if (LIST_EMPTY(&buffer->callbacks))
+		buffer->n_add_for_cb = buffer->n_del_for_cb = 0;
 	EVBUFFER_UNLOCK(buffer);
 	mm_free(ent);
 	return 0;
