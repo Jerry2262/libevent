@@ -1849,18 +1849,55 @@ done:
 }
 
 #if defined(__aarch64__) && (defined(__GNUC__) || defined(__clang__))
+static inline int
+evbuffer_add_5_(struct evbuffer *buf, const void *data_in)
+{
+	struct evbuffer_chain *chain;
+	size_t off, remain, total_len;
+
+#ifndef EVENT__DISABLE_THREAD_SUPPORT
+	if (buf->lock != NULL)
+		return evbuffer_add_general_(buf, data_in, 5);
+#endif
+	total_len = buf->total_len;
+	if (buf->freeze_end || 5 > EV_SIZE_MAX - total_len ||
+	    !LIST_EMPTY(&buf->callbacks))
+		return evbuffer_add_general_(buf, data_in, 5);
+
+	EVUTIL_ASSERT(buf->n_add_for_cb == 0);
+	EVUTIL_ASSERT(buf->n_del_for_cb == 0);
+	chain = *buf->last_with_datap;
+	if (chain == NULL)
+		chain = buf->last;
+	if (chain == NULL || (chain->flags & EVBUFFER_IMMUTABLE))
+		return evbuffer_add_general_(buf, data_in, 5);
+
+	EVUTIL_ASSERT(chain->misalign >= 0 &&
+	    (ev_uint64_t)chain->misalign <= EVBUFFER_CHAIN_MAX);
+	off = chain->off;
+	remain = chain->buffer_len - (size_t)chain->misalign - off;
+	if (remain < 5)
+		return evbuffer_add_general_(buf, data_in, 5);
+
+	__builtin_memcpy(chain->buffer + chain->misalign + off, data_in, 5);
+	chain->off = off + 5;
+	buf->total_len = total_len + 5;
+	return 0;
+}
+
 int
 evbuffer_add(struct evbuffer *buf, const void *data_in, size_t datlen)
 {
 	struct evbuffer_chain *chain;
 	size_t remain;
 
+	if (datlen == 5)
+		return evbuffer_add_5_(buf, data_in);
 	if (datlen > 6)
 		return evbuffer_add_general_(buf, data_in, datlen);
 	switch (datlen) {
 	case 2:
 	case 4:
-	case 5:
 	case 6:
 		break;
 	default:

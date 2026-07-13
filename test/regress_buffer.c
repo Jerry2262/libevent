@@ -1033,7 +1033,7 @@ static void log_change_callback(struct evbuffer *,
 static void
 test_evbuffer_add_short_guard_fallbacks(void *ptr)
 {
-	static const char short_data[] = "abcd";
+	static const char short_data[] = "abcde";
 	struct evbuffer *buf = NULL;
 	struct evbuffer *out = NULL;
 	struct evbuffer_chain *chain, *old_last;
@@ -1048,11 +1048,11 @@ test_evbuffer_add_short_guard_fallbacks(void *ptr)
 	tt_assert(out);
 	tt_int_op(evbuffer_add(buf, "s", 1), ==, 0);
 	tt_assert(evbuffer_add_cb(buf, log_change_callback, out));
-	tt_int_op(evbuffer_add(buf, short_data, 4), ==, 0);
-	tt_uint_op(evbuffer_get_length(buf), ==, 5);
+	tt_int_op(evbuffer_add(buf, short_data, 5), ==, 0);
+	tt_uint_op(evbuffer_get_length(buf), ==, 6);
 	tt_uint_op(evbuffer_get_length(out), ==, 6);
-	tt_mem_op(evbuffer_pullup(out, -1), ==, "1->5; ", 6);
-	tt_mem_op(evbuffer_pullup(buf, -1), ==, "sabcd", 5);
+	tt_mem_op(evbuffer_pullup(out, -1), ==, "1->6; ", 6);
+	tt_mem_op(evbuffer_pullup(buf, -1), ==, "sabcde", 6);
 	evbuffer_free(buf);
 	buf = NULL;
 	evbuffer_free(out);
@@ -1063,7 +1063,7 @@ test_evbuffer_add_short_guard_fallbacks(void *ptr)
 	tt_assert(buf);
 	tt_int_op(evbuffer_add(buf, "seed", 4), ==, 0);
 	tt_int_op(evbuffer_freeze(buf, 0), ==, 0);
-	tt_int_op(evbuffer_add(buf, short_data, 4), ==, -1);
+	tt_int_op(evbuffer_add(buf, short_data, 5), ==, -1);
 	tt_uint_op(evbuffer_get_length(buf), ==, 4);
 	tt_mem_op(evbuffer_pullup(buf, -1), ==, "seed", 4);
 	tt_int_op(evbuffer_unfreeze(buf, 0), ==, 0);
@@ -1074,21 +1074,21 @@ test_evbuffer_add_short_guard_fallbacks(void *ptr)
 	buf = evbuffer_new();
 	tt_assert(buf);
 	tt_int_op(evbuffer_add_reference(buf, "ref", 3, NULL, NULL), ==, 0);
-	tt_int_op(evbuffer_add(buf, short_data, 4), ==, 0);
-	tt_uint_op(evbuffer_get_length(buf), ==, 7);
-	tt_mem_op(evbuffer_pullup(buf, -1), ==, "refabcd", 7);
+	tt_int_op(evbuffer_add(buf, short_data, 5), ==, 0);
+	tt_uint_op(evbuffer_get_length(buf), ==, 8);
+	tt_mem_op(evbuffer_pullup(buf, -1), ==, "refabcde", 8);
 	evbuffer_free(buf);
 	buf = NULL;
 
-	/* Leave less than four bytes in a mutable chain to force allocation. */
+	/* Leave less than five bytes in a mutable chain to force allocation. */
 	buf = evbuffer_new();
 	tt_assert(buf);
 	tt_int_op(evbuffer_add(buf, "p", 1), ==, 0);
 	chain = buf->last;
 	tt_assert(chain);
 	remain = chain->buffer_len - chain->misalign - chain->off;
-	tt_assert(remain >= 4);
-	fill_length = remain - 3;
+	tt_assert(remain >= 5);
+	fill_length = remain - 4;
 	fill = malloc(fill_length);
 	tt_assert(fill);
 	memset(fill, 'x', fill_length);
@@ -1096,15 +1096,15 @@ test_evbuffer_add_short_guard_fallbacks(void *ptr)
 	tt_assert(buf->last == chain);
 	initial_length = evbuffer_get_length(buf);
 	old_last = buf->last;
-	tt_int_op(evbuffer_add(buf, short_data, 4), ==, 0);
-	tt_uint_op(evbuffer_get_length(buf), ==, initial_length + 4);
+	tt_int_op(evbuffer_add(buf, short_data, 5), ==, 0);
+	tt_uint_op(evbuffer_get_length(buf), ==, initial_length + 5);
 	tt_assert(buf->last != old_last);
 	contents = evbuffer_pullup(buf, -1);
 	tt_assert(contents);
 	tt_int_op(contents[0], ==, 'p');
 	if (fill_length)
 		tt_mem_op(contents + 1, ==, fill, fill_length);
-	tt_mem_op(contents + initial_length, ==, short_data, 4);
+	tt_mem_op(contents + initial_length, ==, short_data, 5);
 
 end:
 	free(fill);
@@ -1122,9 +1122,9 @@ test_evbuffer_add_short_locked_fallback(void *ptr)
 	tt_assert(buf);
 	tt_int_op(evbuffer_add(buf, "s", 1), ==, 0);
 	tt_int_op(evbuffer_enable_locking(buf, NULL), ==, 0);
-	tt_int_op(evbuffer_add(buf, "abcd", 4), ==, 0);
-	tt_uint_op(evbuffer_get_length(buf), ==, 5);
-	tt_mem_op(evbuffer_pullup(buf, -1), ==, "sabcd", 5);
+	tt_int_op(evbuffer_add(buf, "abcde", 5), ==, 0);
+	tt_uint_op(evbuffer_get_length(buf), ==, 6);
+	tt_mem_op(evbuffer_pullup(buf, -1), ==, "sabcde", 6);
 
 end:
 	if (buf)
