@@ -1582,10 +1582,10 @@ test_evbuffer_reference_allocation_size(void *ptr)
 
 	tt_uint_op(reference_allocation_size, ==,
 	    EVBUFFER_CHAIN_SIZE + sizeof(struct evbuffer_chain_reference));
-	evbuffer_chain_pin_(buf->first, EVBUFFER_MEM_PINNED_R);
+	buf->first->flags |= EVBUFFER_MEM_PINNED_R;
 	tt_int_op(evbuffer_drain(buf, 1), ==, 0);
 	tt_int_op(compact_reference_cleanup_count, ==, 0);
-	evbuffer_chain_unpin_(buf->first, EVBUFFER_MEM_PINNED_R);
+	buf->first->flags &= ~EVBUFFER_MEM_PINNED_R;
 	evbuffer_free(buf);
 	buf = NULL;
 	tt_int_op(compact_reference_cleanup_count, ==, 1);
