@@ -1546,12 +1546,19 @@ failing_malloc(size_t how_much)
 
 #if defined(__aarch64__) && !defined(EVENT__DISABLE_MM_REPLACEMENT)
 static size_t reference_allocation_size;
+static int compact_reference_cleanup_count;
 
 static void *
 record_reference_allocation(size_t size)
 {
 	reference_allocation_size = size;
 	return malloc(size);
+}
+
+static void
+compact_reference_cleanup(const void *data, size_t len, void *extra)
+{
+	++compact_reference_cleanup_count;
 }
 
 static void
@@ -1562,17 +1569,37 @@ test_evbuffer_reference_allocation_size(void *ptr)
 
 	buf = evbuffer_new();
 	tt_assert(buf);
+	tt_int_op(evbuffer_enable_locking(buf, NULL), ==, 0);
 
 	reference_allocation_size = 0;
+	compact_reference_cleanup_count = 0;
 	event_set_mem_functions(record_reference_allocation, realloc, free);
 	replacement_active = 1;
-	tt_int_op(evbuffer_add_reference(buf, "x", 1, NULL, NULL), ==, 0);
+	tt_int_op(evbuffer_add_reference(buf, "x", 1,
+	    compact_reference_cleanup, NULL), ==, 0);
 	event_set_mem_functions(malloc, realloc, free);
 	replacement_active = 0;
 
 	tt_uint_op(reference_allocation_size, ==,
 	    EVBUFFER_CHAIN_SIZE + sizeof(struct evbuffer_chain_reference));
+	evbuffer_chain_pin_(buf->first, EVBUFFER_MEM_PINNED_R);
 	tt_int_op(evbuffer_drain(buf, 1), ==, 0);
+	tt_int_op(compact_reference_cleanup_count, ==, 0);
+	evbuffer_chain_unpin_(buf->first, EVBUFFER_MEM_PINNED_R);
+	evbuffer_free(buf);
+	buf = NULL;
+	tt_int_op(compact_reference_cleanup_count, ==, 1);
+
+	buf = evbuffer_new();
+	tt_assert(buf);
+	event_set_mem_functions(failing_malloc, realloc, free);
+	replacement_active = 1;
+	tt_int_op(evbuffer_add_reference(buf, "x", 1,
+	    compact_reference_cleanup, NULL), ==, -1);
+	event_set_mem_functions(malloc, realloc, free);
+	replacement_active = 0;
+	tt_uint_op(evbuffer_get_length(buf), ==, 0);
+	tt_int_op(compact_reference_cleanup_count, ==, 1);
 
 end:
 	if (replacement_active)
@@ -3122,7 +3149,7 @@ struct testcase_t evbuffer_testcases[] = {
 	{ "add_reference", test_evbuffer_add_reference, 0, NULL, NULL },
 #if defined(__aarch64__) && !defined(EVENT__DISABLE_MM_REPLACEMENT)
 	{ "reference_allocation_size", test_evbuffer_reference_allocation_size,
-	  TT_FORK, NULL, NULL },
+	  TT_FORK|TT_NEED_THREADS, &basic_setup, NULL },
 #endif
 	{ "multicast", test_evbuffer_multicast, 0, NULL, NULL },
 	{ "multicast_drain", test_evbuffer_multicast_drain, 0, NULL, NULL },
