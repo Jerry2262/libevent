@@ -1565,6 +1565,8 @@ static void
 test_evbuffer_reference_allocation_size(void *ptr)
 {
 	struct evbuffer *buf = NULL;
+	struct evbuffer *src = NULL;
+	struct evbuffer *dst = NULL;
 	int replacement_active = 0;
 
 	buf = evbuffer_new();
@@ -1601,11 +1603,28 @@ test_evbuffer_reference_allocation_size(void *ptr)
 	tt_uint_op(evbuffer_get_length(buf), ==, 0);
 	tt_int_op(compact_reference_cleanup_count, ==, 1);
 
+	src = evbuffer_new();
+	dst = evbuffer_new();
+	tt_assert(src);
+	tt_assert(dst);
+	tt_int_op(evbuffer_add_reference(src, "m", 1,
+	    compact_reference_cleanup, NULL), ==, 0);
+	tt_int_op(evbuffer_add_buffer_reference(dst, src), ==, 0);
+	evbuffer_free(src);
+	src = NULL;
+	tt_int_op(compact_reference_cleanup_count, ==, 1);
+	tt_int_op(evbuffer_drain(dst, 1), ==, 0);
+	tt_int_op(compact_reference_cleanup_count, ==, 2);
+
 end:
 	if (replacement_active)
 		event_set_mem_functions(malloc, realloc, free);
 	if (buf)
 		evbuffer_free(buf);
+	if (src)
+		evbuffer_free(src);
+	if (dst)
+		evbuffer_free(dst);
 }
 #endif
 
