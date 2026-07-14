@@ -192,6 +192,23 @@ evbuffer_chain_new(size_t size)
 	return (chain);
 }
 
+#if defined(__aarch64__)
+static struct evbuffer_chain *
+evbuffer_chain_new_reference(void)
+{
+	struct evbuffer_chain *chain;
+	const size_t size = EVBUFFER_CHAIN_SIZE +
+	    sizeof(struct evbuffer_chain_reference);
+
+	if ((chain = mm_malloc(size)) == NULL)
+		return NULL;
+
+	memset(chain, 0, EVBUFFER_CHAIN_SIZE);
+	chain->refcnt = 1;
+	return chain;
+}
+#endif
+
 static inline void
 evbuffer_chain_free(struct evbuffer_chain *chain)
 {
@@ -3037,7 +3054,11 @@ evbuffer_add_reference(struct evbuffer *outbuf,
 	struct evbuffer_chain_reference *info;
 	int result = -1;
 
+#if defined(__aarch64__)
+	chain = evbuffer_chain_new_reference();
+#else
 	chain = evbuffer_chain_new(sizeof(struct evbuffer_chain_reference));
+#endif
 	if (!chain)
 		return (-1);
 	chain->flags |= EVBUFFER_REFERENCE | EVBUFFER_IMMUTABLE;
