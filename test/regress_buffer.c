@@ -1544,6 +1544,44 @@ failing_malloc(size_t how_much)
 }
 #endif
 
+#if defined(__aarch64__) && !defined(EVENT__DISABLE_MM_REPLACEMENT)
+static size_t reference_allocation_size;
+
+static void *
+record_reference_allocation(size_t size)
+{
+	reference_allocation_size = size;
+	return malloc(size);
+}
+
+static void
+test_evbuffer_reference_allocation_size(void *ptr)
+{
+	struct evbuffer *buf = NULL;
+	int replacement_active = 0;
+
+	buf = evbuffer_new();
+	tt_assert(buf);
+
+	reference_allocation_size = 0;
+	event_set_mem_functions(record_reference_allocation, realloc, free);
+	replacement_active = 1;
+	tt_int_op(evbuffer_add_reference(buf, "x", 1, NULL, NULL), ==, 0);
+	event_set_mem_functions(malloc, realloc, free);
+	replacement_active = 0;
+
+	tt_uint_op(reference_allocation_size, ==,
+	    EVBUFFER_CHAIN_SIZE + sizeof(struct evbuffer_chain_reference));
+	tt_int_op(evbuffer_drain(buf, 1), ==, 0);
+
+end:
+	if (replacement_active)
+		event_set_mem_functions(malloc, realloc, free);
+	if (buf)
+		evbuffer_free(buf);
+}
+#endif
+
 static void
 test_evbuffer_readln(void *ptr)
 {
@@ -3082,6 +3120,10 @@ struct testcase_t evbuffer_testcases[] = {
 	{ "deferred_callback_no_carryover",
 	  test_evbuffer_deferred_callback_no_carryover, TT_FORK, NULL, NULL },
 	{ "add_reference", test_evbuffer_add_reference, 0, NULL, NULL },
+#if defined(__aarch64__) && !defined(EVENT__DISABLE_MM_REPLACEMENT)
+	{ "reference_allocation_size", test_evbuffer_reference_allocation_size,
+	  TT_FORK, NULL, NULL },
+#endif
 	{ "multicast", test_evbuffer_multicast, 0, NULL, NULL },
 	{ "multicast_drain", test_evbuffer_multicast_drain, 0, NULL, NULL },
 	{ "prepend", test_evbuffer_prepend, TT_FORK, NULL, NULL },
